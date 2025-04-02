@@ -1,0 +1,51 @@
+base_encoder:
+
+  ws: 128
+  patch_len: 8
+
+  d_model: 256
+  d_ff: 256
+  n_heads: 8
+  n_layers: 3
+
+  save_path: ../checkpoints/ts_jepa_vicreg_v2
+
+pretraining:
+
+  epochs: 10
+  batch_size: 256
+
+  mask_ratio_range: 
+    - 0.3
+    - 0.5
+
+  predictor_dim: 256
+  predictor_dff: 256
+  predictor_nheads: 8
+  predictor_nlayers: 2
+
+  start_lr: 2e-4
+  ref_lr: 1e-3
+  final_lr: 1e-6
+  ema:
+    - 0.996
+    - 1.0
+  ipe_scale: 1.
+  warmup: 40
+  wd: 0.04
+  final_wd: 0.4
+
+  coeff_pred: 1
+  coeff_std: 0.1
+  coeff_cov: 0.0001
+
+  data_dir: data/raw
+
+finetuning:
+  dataset: nyc_taxi
+  load_epoch: 2
+  lr: 1e-4
+  epochs: 1
+  batch_size: 256
+  head_dp: 0.
+  freeze_encoder: True

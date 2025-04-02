@@ -1,0 +1,6 @@
+*data/
+*outputs/
+*wandb/
+*TS-JEPA/
+checkpoints/
+__pycache__/
