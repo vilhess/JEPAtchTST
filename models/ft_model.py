@@ -60,7 +60,6 @@ class PatchTrAD(nn.Module):
         checkpoint_path = config.save_path + "_" + str(config.load_epoch) + ".ckpt"
         checkpoint = torch.load(checkpoint_path, weights_only=True)
         self.encoder.load_state_dict(checkpoint)
-        self.encoder.eval()
         self.encoder.requires_grad_(False if config.freeze_encoder else True)
 
         self.head = Head(config.in_dim, config.patch_len, num_patches, config.d_model, config.head_dp if config.head_dp else 0)
@@ -69,7 +68,8 @@ class PatchTrAD(nn.Module):
         self.mask = torch.linspace(0, num_patches-2, num_patches-1, dtype=torch.int64).unsqueeze(0)
 
     def forward(self, x):
-        mask = self.mask.repeat(x.shape[0], 1).to(x.device) 
+        #mask = self.mask.repeat(x.shape[0], 1).to(x.device) 
+        mask = None
         patched, h = self.encoder(x, mask=mask)
 
         out = self.head(h)
@@ -77,10 +77,16 @@ class PatchTrAD(nn.Module):
     
     def get_loss(self, x, mode="train"):
 
-        inp, out = self.forward(x); 
-        inp = inp[:, :, -1, :]
+        inp, out = self.forward(x)
 
-        error = ((out - inp)**2).flatten(start_dim=1).mean(dim=(1))
+        if mode=="train":
+            error = ((out - inp)**2).flatten(start_dim=1).mean(dim=(1))
+            
+        elif mode=="test":
+            inp = inp[:, :, -1, :]
+            out = out[:, :, -1, :]
+            error = ((out - inp)**2).flatten(start_dim=1).mean(dim=(1))
+
         return error
     
 class PatchTradLit(L.LightningModule):

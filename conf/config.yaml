@@ -1,14 +1,14 @@
 base_encoder:
 
-  ws: 128
-  patch_len: 8
+  ws: 100
+  patch_len: 5
 
-  d_model: 256
+  d_model: 128
   d_ff: 256
   n_heads: 8
-  n_layers: 3
+  n_layers: 2
 
-  save_path: ../checkpoints/ts_jepa_vicreg_v2
+  save_path: ../checkpoints/ts_jepa_vicreg_v3 # no revin layer, later add a first conv??
 
 pretraining:
 
@@ -16,10 +16,10 @@ pretraining:
   batch_size: 256
 
   mask_ratio_range: 
-    - 0.3
+    - 0.4
     - 0.5
 
-  predictor_dim: 256
+  predictor_dim: 128
   predictor_dff: 256
   predictor_nheads: 8
   predictor_nlayers: 2
@@ -36,16 +36,16 @@ pretraining:
   final_wd: 0.4
 
   coeff_pred: 1
-  coeff_std: 0.1
-  coeff_cov: 0.0001
+  coeff_std: 0.01
+  coeff_cov: 0.001
 
   data_dir: data/raw
 
 finetuning:
   dataset: nyc_taxi
-  load_epoch: 2
+  load_epoch: 1
   lr: 1e-4
-  epochs: 1
+  epochs: 5
   batch_size: 256
-  head_dp: 0.
+  head_dp: 0.1
   freeze_encoder: True

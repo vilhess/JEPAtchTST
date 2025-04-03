@@ -10,65 +10,6 @@ from models.mask import apply_masks
 from models.schedulers import WarmupCosineSchedule, CosineWDSchedule
 from models.vicreg import VICRegLoss
 
-class RevIN(nn.Module):
-    def __init__(self, num_features: int, eps=1e-5, affine=True, subtract_last=False):
-        """
-        :param num_features: the number of features or channels
-        :param eps: a value added for numerical stability
-        :param affine: if True, RevIN has learnable affine parameters
-        """
-        super(RevIN, self).__init__()
-        self.num_features = num_features
-        self.eps = eps
-        self.affine = affine
-        self.subtract_last = subtract_last
-        if self.affine:
-            self._init_params()
-
-    def forward(self, x, mode:str):
-        if mode == 'norm':
-            self._get_statistics(x)
-            x = self._normalize(x)
-        elif mode == 'denorm':
-            x = self._denormalize(x)
-        else: raise NotImplementedError
-        return x
-
-    def _init_params(self):
-        # initialize RevIN params: (C,)
-        self.affine_weight = nn.Parameter(torch.ones(self.num_features))
-        self.affine_bias = nn.Parameter(torch.zeros(self.num_features))
-
-    def _get_statistics(self, x):
-        dim2reduce = tuple(range(1, x.ndim-1))
-        if self.subtract_last:
-            self.last = x[:,-1,:].unsqueeze(1)
-        else:
-            self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
-        self.stdev = torch.sqrt(torch.var(x, dim=dim2reduce, keepdim=True, unbiased=False) + self.eps).detach()
-
-    def _normalize(self, x):
-        if self.subtract_last:
-            x = x - self.last
-        else:
-            x = x - self.mean
-        x = x / self.stdev
-        if self.affine:
-            x = x * self.affine_weight
-            x = x + self.affine_bias
-        return x
-
-    def _denormalize(self, x):
-        if self.affine:
-            x = x - self.affine_bias
-            x = x / (self.affine_weight + self.eps*self.eps)
-        x = x * self.stdev
-        if self.subtract_last:
-            x = x + self.last
-        else:
-            x = x + self.mean
-        return x
-
 class Patcher(nn.Module):
     def __init__(self, window_size, patch_len):
         super().__init__()
@@ -306,8 +247,6 @@ class PatchTrADencoder(nn.Module):
         shape = self.patcher.shape
         patch_num = shape["patch_num"]
 
-        self.revin = RevIN(num_features=1, eps=1e-5, affine=True, subtract_last=False)
-
         self.encoder = TSTiEncoder(patch_num=patch_num, patch_len=patch_len, d_model=d_model, 
                                    n_heads=n_heads, n_layers=n_layers, d_ff=d_ff, attn_dp=attn_dp,
                                    dp=dp)
@@ -315,12 +254,9 @@ class PatchTrADencoder(nn.Module):
     
 
     def forward(self, x, mask=None):
-
         # Input: 
 
         # x: bs x window_size x nvars
-
-        x = self.revin(x, mode="norm")
         
         patched = self._get_patch(x) # bs x nvars x patch_len x patch_num
         
@@ -463,8 +399,8 @@ class LitJEPA(L.LightningModule):
         self.log('Pred Loss', pred_loss)
 
         std_loss, cov_loss = self.vicreg(z)
-        self.log('Std Loss', std_loss)
-        self.log('Cov Loss', cov_loss)
+        self.log('Std Loss (between individus)', std_loss)
+        self.log('Cov Loss (between features)', cov_loss)
 
         loss = self.coeff_pred*pred_loss + self.coeff_std*std_loss + self.coeff_cov*cov_loss
         self.log('Total Loss', loss)
