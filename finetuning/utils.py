@@ -28,8 +28,10 @@ def load_results(filename="aucs.json"):
         results = json.load(f)
     return results
 
-def save_results(filename, dataset, score):
+def save_results(filename, dataset, model, score):
     results = load_results(filename)
-    results[dataset] = score
+    if dataset not in results:
+        results[dataset]={}
+    results[dataset][model] = score
     with open(filename, "w") as f:
         json.dump(results, f)

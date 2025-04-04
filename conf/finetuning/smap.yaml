@@ -1,7 +1,7 @@
 name: smap
 in_dim: 25
 
-epochs: 5
+epochs: 5 # maybe increase to 20
 lr: 1e-4
 batch_size: 256
 
