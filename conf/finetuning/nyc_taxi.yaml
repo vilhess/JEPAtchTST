@@ -1,0 +1,9 @@
+name: nyc_taxi
+in_dim: 1
+
+epochs: 50
+lr: 1e-4
+batch_size: 256
+
+head_dp: 0.
+freeze_encoder: True

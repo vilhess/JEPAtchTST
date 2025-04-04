@@ -1,23 +1,8 @@
 import json
 
-def get_dim(dataset_name):
-    
-    assert dataset_name in ["nyc_taxi", "ec2_request_latency_system_failure", "msl", "smap", "smd", "swat"], f"Invalid dataset name: {dataset_name}"
-    if dataset_name == "nyc_taxi" or dataset_name == "ec2_request_latency_system_failure":
-        return 1
-    elif dataset_name == "msl": 
-        return 55
-    elif dataset_name == "smap":
-        return 25
-    elif dataset_name == "smd":
-        return 38
-    elif dataset_name == "swat":
-        return 51
-    
 def get_loaders(dataset, config):
     av_datasets = ["nyc_taxi", "smd", "smap", "msl", "swat", "ec2_request_latency_system_failure"]
     assert dataset in av_datasets, f"Dataset ({dataset}) should be in {av_datasets}"
-    dim = get_dim(dataset)
 
     if dataset in ["ec2_request_latency_system_failure", "nyc_taxi"]:
         from dataset.nab import get_loaders as get_nab_loaders
@@ -36,7 +21,7 @@ def get_loaders(dataset, config):
         from dataset.swat import get_loaders as get_swat_loaders
         loaders = [get_swat_loaders(window_size=config.ws-1, root_dir="data/swat", batch_size=config.batch_size)]
         
-    return loaders, dim
+    return loaders
 
 def load_results(filename="aucs.json"):
     with open(filename, 'r') as f:

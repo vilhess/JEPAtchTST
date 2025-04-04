@@ -29,11 +29,12 @@ def main(cfg: DictConfig):
     print(f"---------")
     OmegaConf.set_struct(cfg, False)
 
-    cfg = OmegaConf.merge(cfg.finetuning, cfg.base_encoder)
-    dataset = cfg.dataset
+    cfg.pretraining = None
+    
+    cfg = OmegaConf.merge(cfg.finetuning, cfg.encoder)
+    dataset = cfg.name
 
-    loaders, dim = get_loaders(dataset, cfg)
-    cfg["in_dim"] = dim
+    loaders = get_loaders(dataset, cfg)
 
     wandb_logger = WandbLogger(project='ts-JEPA', name=f"{dataset}")
     aucs = []
@@ -73,14 +74,16 @@ def main(cfg: DictConfig):
         auc = roc_auc_score(test_labels, test_errors)
         print(f"AUC: {auc}")
 
-        import matplotlib.pyplot as plt
-        plt.plot( test_errors.numpy(), label="Test Errors")
-        for idx in range(len(test_labels)):
-            if test_labels[idx] == 1:
-                plt.axvspan(idx - 0.5, idx + 0.5, color='red', alpha=0.3) 
-        plt.title(f"Test Errors for {dataset} subset {i+1}/{len(loaders)}: auc = {auc:.4f}")
-        plt.savefig(f"plots/{dataset}_{i+1}.png")
-        plt.close()
+        if dataset in ["nyc_taxi", "ec2_request_latency_system_failure"]:
+            import matplotlib.pyplot as plt
+            plt.figure(figsize=(20, 6))
+            plt.plot( test_errors.numpy(), label="Test Errors")
+            for idx in range(len(test_labels)):
+                if test_labels[idx] == 1:
+                    plt.axvspan(idx - 0.5, idx + 0.5, color='red', alpha=0.3) 
+            plt.title(f"Test Errors for {dataset} subset {i+1}/{len(loaders)}: auc = {auc:.4f}")
+            plt.savefig(f"plots/{dataset}_{i+1}.png")
+            plt.close()
 
         aucs.append(auc)
         wandb_logger.experiment.summary[f"auc_subset_{i+1}/{len(loaders)}"] = auc

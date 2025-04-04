@@ -1,0 +1,10 @@
+ws: 100
+patch_len: 5
+
+d_model: 128
+d_ff: 256
+n_heads: 8
+n_layers: 2
+
+save_path: ../checkpoints/ts_jepa_vicreg_v3 
+load_epoch: 1

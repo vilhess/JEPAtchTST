@@ -19,12 +19,17 @@ def main(cfg : DictConfig) -> None:
     OmegaConf.set_struct(cfg, False)
     wandb_logger = WandbLogger(project='TS-JEPA', name='PreTraining', config=dict(cfg))
 
-    print(OmegaConf.to_yaml(cfg))
+    cfg.finetuning = None
 
-    cfg = OmegaConf.merge(cfg.pretraining, cfg.base_encoder)
+    print(f"---------")
+    print("Config:")
+    print(OmegaConf.to_yaml(cfg))
+    print(f"---------")
+
+    cfg = OmegaConf.merge(cfg.pretraining, cfg.encoder)
 
     collator = MaskCollator(ratio=cfg.mask_ratio_range, window_size=cfg.ws, patch_len=cfg.patch_len)
-    #trainloader = create_dataloader(ws=cfg.ws, batch_size=cfg.batch_size, data_dir=cfg.data_dir, collator=collator)
+
     trainloader = create_dataloader(subset_name='UTSD-1G', window_size=cfg.ws, batch_size=cfg.batch_size, collator=collator)
     cfg["len_loader"] = len(trainloader)
     

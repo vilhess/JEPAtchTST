@@ -1,0 +1,30 @@
+epochs: 10
+batch_size: 256
+
+mask_ratio_range: 
+  - 0.4
+  - 0.5
+
+predictor_dim: 128
+predictor_dff: 256
+predictor_nheads: 8
+predictor_nlayers: 2
+
+start_lr: 2e-4
+ref_lr: 1e-3
+final_lr: 1e-6
+
+ema:
+  - 0.996
+  - 1.0
+ipe_scale: 1.
+warmup: 40
+
+wd: 0.04
+final_wd: 0.4
+
+coeff_pred: 1
+coeff_std: 0.01
+coeff_cov: 0.001
+
+data_dir: data/raw # obsolete
