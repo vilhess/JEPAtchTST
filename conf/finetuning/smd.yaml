@@ -1,5 +1,4 @@
 name: smd
-
 in_dim: 38
 
 epochs: 5
