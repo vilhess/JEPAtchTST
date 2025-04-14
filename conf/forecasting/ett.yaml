@@ -1,0 +1,14 @@
+name: etth1
+path: data/ETTh1.csv
+
+in_dim: 7
+target_len: 96
+univariate: False
+
+epochs: 20
+lr: 1e-4
+batch_size: 256
+
+head_dp: 0.1
+freeze_encoder: True
+scratch: False

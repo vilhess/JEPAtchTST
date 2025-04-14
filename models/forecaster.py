@@ -3,18 +3,21 @@ import torch.nn as nn
 import lightning as L
 from models.base_model import PatchTrADencoder
     
-class Head(nn.Module):
-    def __init__(self, n_vars, patch_len, patch_num,  d_model, head_dp=0.):
+class PredictorHead(nn.Module):
+    def __init__(self, n_vars, patch_num,  d_model, target_len, head_dp=0.):
         super().__init__() 
 
         self.n_vars = n_vars
+        dim = d_model*patch_num
 
         self.layers = nn.ModuleList([])
         for _ in range(n_vars):
             self.layers.append(
                 nn.Sequential(
-                    nn.Linear(d_model, patch_len),
+                    nn.Linear(dim, dim//2),
                     nn.Dropout(head_dp),
+                    nn.ReLU(),
+                    nn.Linear(dim//2, target_len)
                 )
             )
 
@@ -31,6 +34,7 @@ class Head(nn.Module):
         outs = []
         for i in range(self.n_vars):
             input = x[:, i, :, :]
+            input = input.flatten(start_dim=1)
             out = self.layers[i](input)
             outs.append(out)
         outs = torch.stack(outs, dim=1)
@@ -42,50 +46,44 @@ class PatchTrAD(nn.Module):
         num_patches = config.ws // config.patch_len
 
         self.encoder = PatchTrADencoder(config)
-        checkpoint_path = config.save_path + "_" + str(config.load_epoch) + ".ckpt"
-        checkpoint = torch.load(checkpoint_path, weights_only=True)
-        self.encoder.load_state_dict(checkpoint)
-        self.encoder.requires_grad_(False if config.freeze_encoder else True)
 
-        self.head = Head(config.in_dim, config.patch_len, num_patches, config.d_model, config.head_dp if config.head_dp else 0)
+        if not config.scratch:
+            checkpoint_path = config.save_path + "_" + str(config.load_epoch) + ".ckpt"
+            checkpoint = torch.load(checkpoint_path, weights_only=True)
+            self.encoder.load_state_dict(checkpoint)
+            self.encoder.requires_grad_(False if config.freeze_encoder else True)
+
+        self.head = PredictorHead(
+            n_vars=config.in_dim,
+            patch_num=num_patches,
+            d_model=config.d_model,
+            target_len=config.target_len,
+            head_dp=config.head_dp
+        )
         self.head.requires_grad_(True)
 
+        self.criterion = nn.MSELoss()
+
     def forward(self, x):
-        patched, h = self.encoder(x)
+        _, h = self.encoder(x)
 
-        out = self.head(h)
-        return patched, out
+        prediction = self.head(h)
+        return prediction
     
-    def get_loss(self, x, mode="train"):
-
-        inp, out = self.forward(x)
-
-        if mode=="train":
-            error = ((out - inp)**2).flatten(start_dim=1).mean(dim=(1))
-            
-        elif mode=="test":
-            inp = inp[:, :, -1, :]
-            out = out[:, :, -1, :]
-            error = ((out - inp)**2).flatten(start_dim=1).mean(dim=(1))
-
-        return error
-    
-class PatchTradLit(L.LightningModule):
+class JePatchTST(L.LightningModule):
     def __init__(self, config):
         super().__init__()
         self.model = PatchTrAD(config)
         self.lr = config.lr
     
     def training_step(self, batch, batch_idx):
-        x, _ = batch
-        loss = self.model.get_loss(x, mode="train")
-        loss = loss.mean()
+        x, y = batch
+        prediction = self.model(x)
+        y = y.transpose(1, 2)
+        loss = self.model.criterion(prediction, y)
         self.log("train_loss", loss)
         return loss
     
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
         return optimizer
-    
-    def get_loss(self, x, mode=None):
-        return self.model.get_loss(x, mode=mode)
