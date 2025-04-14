@@ -11,4 +11,4 @@ batch_size: 256
 
 head_dp: 0.1
 freeze_encoder: True
-scratch: False
+scratch: True
