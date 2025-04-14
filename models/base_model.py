@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from models.mask import apply_masks
 from models.schedulers import WarmupCosineSchedule, CosineWDSchedule
-from models.vicreg import VICRegLoss
+from models.vicreg import VICRegLoss2
 
 class Patcher(nn.Module):
     def __init__(self, window_size, patch_len):
@@ -374,7 +374,7 @@ class LitJEPA(L.LightningModule):
                                          T_max=int(self.ipe))
         self.wd_scheduler = CosineWDSchedule(self.optimizer, ref_wd=self.wd, T_max=int(self.ipe*self.epochs*self.ipe_scale), final_wd=self.final_wd)
 
-        self.vicreg = VICRegLoss()
+        self.vicreg = VICRegLoss2()
         
         self.coeff_pred, self.coeff_std, self.coeff_cov = config.coeff_pred, config.coeff_std, config.coeff_cov
 
@@ -392,15 +392,17 @@ class LitJEPA(L.LightningModule):
             h = apply_masks(h, mask_pred)
 
         _, z = self.encoder(windows, mask_enc)
-        z = self.predictor(z, mask_enc, mask_pred)
-        z = z.reshape(z.shape[0]*z.shape[1], z.shape[2], z.shape[3])
 
-        pred_loss = F.smooth_l1_loss(z, h)
-        self.log('Pred Loss', pred_loss)
-
+        # Before this was computed in the prediction space
         std_loss, cov_loss = self.vicreg(z)
         self.log('Std Loss (between individus)', std_loss)
         self.log('Cov Loss (between features)', cov_loss)
+        #
+
+        z = self.predictor(z, mask_enc, mask_pred)
+        z = z.reshape(z.shape[0]*z.shape[1], z.shape[2], z.shape[3])
+        pred_loss = F.smooth_l1_loss(z, h)
+        self.log('Pred Loss', pred_loss)    
 
         loss = self.coeff_pred*pred_loss + self.coeff_std*std_loss + self.coeff_cov*cov_loss
         self.log('Total Loss', loss)
