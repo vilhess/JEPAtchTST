@@ -26,5 +26,3 @@ final_wd: 0.4
 coeff_pred: 1
 coeff_std: 0.01
 coeff_cov: 0.001
-
-data_dir: data/raw # obsolete

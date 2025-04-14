@@ -12,7 +12,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 import gc
 
-from models.ft_model import PatchTradLit
+from models.anomaly_detector import PatchTradLit
 from utils import get_loaders, save_results
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -31,7 +31,7 @@ def main(cfg: DictConfig):
 
     cfg.pretraining = None
     
-    cfg = OmegaConf.merge(cfg.finetuning, cfg.encoder)
+    cfg = OmegaConf.merge(cfg.anomaly_detection, cfg.encoder)
     dataset = cfg.name
 
     loaders = get_loaders(dataset, cfg)

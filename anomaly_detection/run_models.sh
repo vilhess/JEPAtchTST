@@ -5,5 +5,5 @@ datasets=("msl" "swat" "smd" "smap" ) # "nyc_taxi" "ec2_request_latency_system_f
 
 for DATASET in "${datasets[@]}"; do
     echo "Running experiments on dataset: $DATASET"
-    python main.py finetuning=$DATASET
+    python main.py anomaly_detection=$DATASET
 done

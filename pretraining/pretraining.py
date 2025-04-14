@@ -10,8 +10,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from models.mask import MaskCollator 
 from models.base_model import LitJEPA
-#from dataset.pretrain_ds import create_dataloader
-from dataset.uts import create_dataloader
+from uts import create_dataloader
 
 @hydra.main(version_base=None, config_path="../conf", config_name="config")
 def main(cfg : DictConfig) -> None:
