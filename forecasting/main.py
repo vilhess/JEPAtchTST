@@ -12,7 +12,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
-from dataset import ETTDataset
+from dataset import TSDataset
 from models.forecaster import JePatchTST
 from utils import save_results
 
@@ -34,12 +34,11 @@ def main(cfg: DictConfig):
         cfg.scratch = scratch
         cfg.freeze_encoder = freeze_encoder
         
-
         torch.manual_seed(0)
 
         wandb_logger = WandbLogger(project='ts-JEPA', name=f"Forecasting_{cfg.name}_{cfg.freeze_encoder}_{cfg.scratch}")
         
-        trainset = ETTDataset(
+        trainset = TSDataset(
             path=cfg.path,
             seq_len=cfg.ws,
             target_len=cfg.target_len,
@@ -47,7 +46,7 @@ def main(cfg: DictConfig):
             univariate=cfg.univariate,
             target="OT"
         )
-        testset = ETTDataset(
+        testset = TSDataset(
             path=cfg.path,
             seq_len=cfg.ws,
             target_len=cfg.target_len,

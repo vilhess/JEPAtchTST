@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
 
-class ETTDataset(Dataset):
+class TSDataset(Dataset):
     def __init__(self, path, seq_len=100, target_len=100, train=True, univariate=False, target='OT'):
 
         self.seq_len = seq_len
