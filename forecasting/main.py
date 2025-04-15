@@ -19,8 +19,6 @@ from utils import save_results
 @hydra.main(version_base=None, config_path=f"../conf", config_name="config")
 def main(cfg: DictConfig):
 
-    torch.manual_seed(0)
-
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     print(f"---------")
@@ -32,53 +30,60 @@ def main(cfg: DictConfig):
     cfg.pretraining = None
     cfg = OmegaConf.merge(cfg.forecasting, cfg.encoder)
 
-    wandb_logger = WandbLogger(project='ts-JEPA', name=f"Forecasting_{cfg.name}_{cfg.freeze_encoder}_{cfg.scratch}")
-    
-    trainset = ETTDataset(
-        path=cfg.path,
-        seq_len=cfg.ws,
-        target_len=cfg.target_len,
-        train=True,
-        univariate=cfg.univariate,
-        target="OT"
-    )
-    testset = ETTDataset(
-        path=cfg.path,
-        seq_len=cfg.ws,
-        target_len=cfg.target_len,
-        train=False,    
-        univariate=cfg.univariate,
-        target="OT"
-    )
-    trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=21)
-    testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
+    for scratch, freeze_encoder in [(True, True), (False, True), (False, False)]:
+        cfg.scratch = scratch
+        cfg.freeze_encoder = freeze_encoder
+        
 
-    model = JePatchTST(config=cfg)
+        torch.manual_seed(0)
 
-    wandb_logger.config = cfg
+        wandb_logger = WandbLogger(project='ts-JEPA', name=f"Forecasting_{cfg.name}_{cfg.freeze_encoder}_{cfg.scratch}")
+        
+        trainset = ETTDataset(
+            path=cfg.path,
+            seq_len=cfg.ws,
+            target_len=cfg.target_len,
+            train=True,
+            univariate=cfg.univariate,
+            target="OT"
+        )
+        testset = ETTDataset(
+            path=cfg.path,
+            seq_len=cfg.ws,
+            target_len=cfg.target_len,
+            train=False,    
+            univariate=cfg.univariate,
+            target="OT"
+        )
+        trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=21)
+        testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
 
-    trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
-                        accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
-    trainer.fit(model=model, train_dataloaders=trainloader)
+        model = JePatchTST(config=cfg)
 
-    model = model.model.to(DEVICE)
-    cri  = nn.MSELoss()
-    total_loss = []
+        wandb_logger.config = cfg
 
-    for batch in tqdm(testloader):
-        x, y = batch
-        x = x.to(DEVICE)
-        y = y.to(DEVICE).transpose(1, 2)
-        with torch.no_grad():
-            pred = model(x)
-            loss = cri(pred, y)
-            total_loss.append(loss.item())  
-    total_loss = np.average(total_loss)
-    print(f"Test Loss: {total_loss}")
-    save_results(filename="results/mse.json", dataset=cfg.name, model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=total_loss)
+        trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
+                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
+        trainer.fit(model=model, train_dataloaders=trainloader)
 
-    wandb_logger.experiment.summary[f"test_mse"] = total_loss
-    wandb.finish()
+        model = model.model.to(DEVICE)
+        cri  = nn.MSELoss()
+        total_loss = []
+
+        for batch in tqdm(testloader):
+            x, y = batch
+            x = x.to(DEVICE)
+            y = y.to(DEVICE).transpose(1, 2)
+            with torch.no_grad():
+                pred = model(x)
+                loss = cri(pred, y)
+                total_loss.append(loss.item())  
+        total_loss = np.average(total_loss)
+        print(f"Test Loss: {total_loss}")
+        save_results(filename="results/mse.json", dataset=cfg.name, model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=total_loss)
+
+        wandb_logger.experiment.summary[f"test_mse"] = total_loss
+        wandb.finish()
 
 if __name__ == "__main__":
     main()

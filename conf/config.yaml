@@ -3,7 +3,7 @@ defaults:
   - encoder: config_encoder
   - pretraining: vicreg
   - anomaly_detection: nyc_taxi
-  - forecasting: ett 
+  - forecasting: etth1 
   
   - _self_  
   - override hydra/hydra_logging: disabled  
