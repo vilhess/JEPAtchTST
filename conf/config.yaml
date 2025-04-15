@@ -4,6 +4,7 @@ defaults:
   - pretraining: vicreg
   - anomaly_detection: nyc_taxi
   - forecasting: etth1 
+  - classification: signals
   
   - _self_  
   - override hydra/hydra_logging: disabled  

@@ -67,6 +67,8 @@ def main(cfg: DictConfig):
         trainer.fit(model=model, train_dataloaders=trainloader)
 
         model = model.model.to(DEVICE)
+        model.eval()
+        
         cri  = nn.MSELoss()
         total_loss = []
 

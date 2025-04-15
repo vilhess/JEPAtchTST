@@ -1,25 +1,25 @@
+import sys
+sys.path.append("..")
+
 import torch 
 import torch.nn as nn
 import lightning as L
 from models.base_model import PatchTrADencoder
     
-class PredictorHead(nn.Module):
-    def __init__(self, n_vars, patch_num,  d_model, target_len, head_dp=0.):
+class ClassifierHead(nn.Module):
+    def __init__(self, n_vars, patch_num,  d_model, n_classes, head_dp=0.):
         super().__init__() 
 
-        self.n_vars = n_vars
-        dim = d_model*patch_num
+        dim = n_vars*d_model*patch_num
 
-        self.layers = nn.ModuleList([])
-        for _ in range(n_vars):
-            self.layers.append(
-                nn.Sequential(
-                    nn.Linear(dim, dim//2),
-                    nn.Dropout(head_dp),
-                    nn.ReLU(),
-                    nn.Linear(dim//2, target_len)
-                )
-            )
+        self.layers = nn.Sequential(
+            nn.Flatten(start_dim=1),
+            nn.Linear(dim, dim),
+            nn.ReLU(),
+            nn.Dropout(head_dp),
+            nn.Linear(dim, n_classes), 
+            nn.Sigmoid()
+        )
 
     def forward(self, x):
 
@@ -29,15 +29,9 @@ class PredictorHead(nn.Module):
 
         # Output:
 
-        # out: bs x nvars x target_len
+        # out: bs x n_class
 
-        outs = []
-        for i in range(self.n_vars):
-            input = x[:, i, :, :]
-            input = input.flatten(start_dim=1)
-            out = self.layers[i](input)
-            outs.append(out)
-        outs = torch.stack(outs, dim=1)
+        outs = self.layers(x)
         return outs
     
 class PatchTrAD(nn.Module):
@@ -53,11 +47,11 @@ class PatchTrAD(nn.Module):
             self.encoder.load_state_dict(checkpoint)
             self.encoder.requires_grad_(False if config.freeze_encoder else True)
 
-        self.head = PredictorHead(
+        self.head = ClassifierHead(
             n_vars=config.in_dim,
             patch_num=num_patches,
             d_model=config.d_model,
-            target_len=config.target_len,
+            n_classes=config.n_classes,
             head_dp=config.head_dp
         )
         self.head.requires_grad_(True)
@@ -73,12 +67,11 @@ class JePatchTST(L.LightningModule):
         super().__init__()
         self.model = PatchTrAD(config)
         self.lr = config.lr
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.CrossEntropyLoss()
     
     def training_step(self, batch, batch_idx):
         x, y = batch
         prediction = self.model(x)
-        y = y.transpose(1, 2)
         loss = self.criterion(prediction, y)
         self.log("train_loss", loss)
         return loss
