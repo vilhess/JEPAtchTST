@@ -1,7 +1,7 @@
-name: ettm2
-path: data/ETTm2.csv
+name: exchange_rate
+path: data/exchange_rate.csv
 
-in_dim: 1 # 7
+in_dim: 1 # 8
 target_len: 96
 univariate: True
 

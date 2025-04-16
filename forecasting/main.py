@@ -81,7 +81,9 @@ def main(cfg: DictConfig):
                 total_loss.append(loss.item())  
         total_loss = np.average(total_loss)
         print(f"Test Loss: {total_loss}")
-        save_results(filename="results/mse.json", dataset=cfg.name, model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=total_loss)
+
+        ext=f"_univariate" if cfg.univariate else ""
+        save_results(filename="results/mse.json", dataset=f"{cfg.name}{ext}", model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=total_loss)
 
         wandb_logger.experiment.summary[f"test_mse"] = total_loss
         wandb.finish()
