@@ -1,9 +1,9 @@
 name: electricity
 path: data/electricity.csv
 
-in_dim: 1 # 321
+in_dim: 321
 target_len: 96
-univariate: True
+univariate: False
 
 epochs: 20
 lr: 1e-4
