@@ -278,10 +278,10 @@ class TSTiPredictor(nn.Module):
         patch_len = config.patch_len
         patch_num = window_size//patch_len
         d_model = config.d_model
-        predictor_dim = config.predictor_dim
-        n_heads = config.predictor_nheads
-        n_layers = config.predictor_nlayers
-        d_ff = config.predictor_dff
+        predictor_dim = config.d_model
+        n_heads = config.n_heads
+        n_layers = config.n_layers
+        d_ff = config.d_ff
         attn_dp=0.
         dp=0.
 

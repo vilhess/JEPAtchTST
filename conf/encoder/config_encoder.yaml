@@ -8,3 +8,4 @@ n_layers: 2
 
 save_path: ../checkpoints/ts_jepa_vicreg
 load_epoch: 1
+dataset: 1G

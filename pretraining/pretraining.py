@@ -29,7 +29,7 @@ def main(cfg : DictConfig) -> None:
 
     collator = MaskCollator(ratio=cfg.mask_ratio_range, window_size=cfg.ws, patch_len=cfg.patch_len)
 
-    trainloader = create_dataloader(subset_name='UTSD-1G', window_size=cfg.ws, batch_size=cfg.batch_size, collator=collator)
+    trainloader = create_dataloader(subset_name=f'UTSD-{cfg.dataset}', window_size=cfg.ws, batch_size=cfg.batch_size, collator=collator)
     cfg["len_loader"] = len(trainloader)
     
     model = LitJEPA(cfg)

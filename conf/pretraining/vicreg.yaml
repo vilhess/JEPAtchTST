@@ -5,11 +5,6 @@ mask_ratio_range:
   - 0.4
   - 0.5
 
-predictor_dim: 128
-predictor_dff: 256
-predictor_nheads: 8
-predictor_nlayers: 2
-
 start_lr: 2e-4
 ref_lr: 1e-3
 final_lr: 1e-6
