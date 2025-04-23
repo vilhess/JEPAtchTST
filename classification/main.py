@@ -42,8 +42,8 @@ def main(cfg: DictConfig):
 
         wandb_logger = WandbLogger(project='ts-JEPA', name=f"Classification_{cfg.name}_{cfg.freeze_encoder}_{cfg.scratch}")
         
-        trainset = SignalDataset(mode='train')
-        testset = SignalDataset(mode='test')
+        trainset = SignalDataset(mode='train', size=cfg.ws)
+        testset = SignalDataset(mode='test', size=cfg.ws)
 
         trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=21)
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
@@ -85,11 +85,11 @@ def main(cfg: DictConfig):
         plt.xlabel("Predicted")
         plt.ylabel("True")
         plt.yticks(rotation=0)
-        plt.title("Confusion Matrix")
-        plt.savefig(f"results/confusion_matrix_{cfg.freeze_encoder}_{cfg.scratch}.png")
+        plt.title("Confusion Matrix ; Accuracy: {:.2f}%".format(accuracy * 100))
+        plt.savefig(f"results/{cfg.size}/confusion_matrix_{cfg.freeze_encoder}_{cfg.scratch}.png")
         plt.close()
 
-        save_results(filename="results/accs.json", dataset=cfg.name, model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=accuracy)
+        save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=accuracy)
 
         wandb_logger.experiment.summary[f"test_accuracy"] = accuracy
         wandb.finish()

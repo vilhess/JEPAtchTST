@@ -19,7 +19,7 @@ train_start_vals = [1, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
 test_start_vals = [65, 70, 75, 80, 85]
 
 class SignalDataset(Dataset):
-    def __init__(self, mode='train'):
+    def __init__(self, mode='train', size=100):
         self.data = []
         self.labels = []
 
@@ -86,14 +86,14 @@ class SignalDataset(Dataset):
         for signal_type, variants in variant_dict.items():
             label = signal_type_to_label[signal_type]
             for fn in variants:
-                ys = self.generate_and_encode_signal(fn, start_vals)
+                ys = self.generate_and_encode_signal(fn, start_vals, size)
                 self.data.extend(ys)
                 self.labels.extend([label] * ys.size(0))
 
-    def generate_and_encode_signal(self, signal_fn, start_vals):
+    def generate_and_encode_signal(self, signal_fn, start_vals, size):
         ys = []
         for start in start_vals:
-            x = torch.linspace(1 * start, 1 * start + 50, 100)
+            x = torch.linspace(1 * start, 1 * start + 50, size)
             y = signal_fn(x)
             y = y.unsqueeze(-1) 
             ys.append(y)
