@@ -1,9 +1,9 @@
 name: ettm2
 path: data/ETTm2.csv
 
-in_dim: 1 # 7
+in_dim: 7
 target_len: 96
-univariate: True
+univariate: False
 
 epochs: 20
 lr: 1e-4

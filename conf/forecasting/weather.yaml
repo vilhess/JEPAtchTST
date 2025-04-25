@@ -1,9 +1,9 @@
 name: weather
 path: data/weather.csv
 
-in_dim: 1 # 21
+in_dim: 21
 target_len: 96
-univariate: True
+univariate: False
 
 epochs: 20
 lr: 1e-4

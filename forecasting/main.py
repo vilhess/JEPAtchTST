@@ -30,6 +30,9 @@ def main(cfg: DictConfig):
     cfg.pretraining = None
     cfg = OmegaConf.merge(cfg.forecasting, cfg.encoder)
 
+    if cfg.univariate:
+        cfg.in_dim = 1
+
     for scratch, freeze_encoder in [(True, True), (False, True), (False, False)]:
         cfg.scratch = scratch
         cfg.freeze_encoder = freeze_encoder
