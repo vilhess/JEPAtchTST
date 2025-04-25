@@ -42,7 +42,7 @@ class PatchTrAD(nn.Module):
         self.encoder = PatchTrADencoder(config)
 
         if not config.scratch:
-            checkpoint_path = config.save_path + "_" + str(config.load_epoch) + ".ckpt"
+            checkpoint_path = "../" + config.save_path + "_" + str(config.load_epoch) + ".ckpt"
             checkpoint = torch.load(checkpoint_path, weights_only=True)
             self.encoder.load_state_dict(checkpoint)
             self.encoder.requires_grad_(False if config.freeze_encoder else True)

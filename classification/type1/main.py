@@ -1,5 +1,5 @@
 import sys
-sys.path.append("..")
+sys.path.append("../../")
 
 import torch
 import torch.nn as nn
@@ -19,7 +19,7 @@ from dataset import SignalDataset, signal_type_to_label
 from models.classifier import JePatchTST
 from utils import save_results
 
-@hydra.main(version_base=None, config_path=f"../conf", config_name="config")
+@hydra.main(version_base=None, config_path=f"../../conf", config_name="config")
 def main(cfg: DictConfig):
 
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
