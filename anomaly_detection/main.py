@@ -74,17 +74,6 @@ def main(cfg: DictConfig):
         auc = roc_auc_score(test_labels, test_errors)
         print(f"AUC: {auc}")
 
-        if dataset in ["nyc_taxi", "ec2_request_latency_system_failure"]:
-            import matplotlib.pyplot as plt
-            plt.figure(figsize=(20, 6))
-            plt.plot( test_errors.numpy(), label="Test Errors")
-            for idx in range(len(test_labels)):
-                if test_labels[idx] == 1:
-                    plt.axvspan(idx - 0.5, idx + 0.5, color='red', alpha=0.3) 
-            plt.title(f"Test Errors for {dataset} subset {i+1}/{len(loaders)}: auc = {auc:.4f}")
-            plt.savefig(f"plots/{dataset}_{i+1}.png")
-            plt.close()
-
         aucs.append(auc)
         wandb_logger.experiment.summary[f"auc_subset_{i+1}/{len(loaders)}"] = auc
 
@@ -102,7 +91,7 @@ def main(cfg: DictConfig):
         
     final_auc = np.mean(aucs)
     print(f"Final AUC: {final_auc}")
-    save_results(filename="results/aucs.json", dataset=dataset, model="jepav2", score=round(final_auc, 4))
+    save_results(filename=f"results/aucs.json", dataset=dataset, model=f"jepatchtrad_{cfg.size}", score=round(final_auc, 4))
     wandb_logger.experiment.summary[f"final_auc"] = final_auc
 
     wandb.finish()
