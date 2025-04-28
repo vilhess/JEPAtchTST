@@ -77,7 +77,7 @@ def main(cfg: DictConfig):
         for batch in tqdm(testloader):
             x, y = batch
             x = x.to(DEVICE)
-            y = y.to(DEVICE).transpose(1, 2)
+            y = y.to(DEVICE)
             with torch.no_grad():
                 pred = model(x)
                 loss = cri(pred, y)
@@ -86,7 +86,8 @@ def main(cfg: DictConfig):
         print(f"Test Loss: {total_loss}")
 
         ext=f"_univariate" if cfg.univariate else ""
-        save_results(filename=f"results/mse_{cfg.size}.json", dataset=f"{cfg.name}{ext}", model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=total_loss)
+        rev = "_revin" if cfg.revin else ""
+        save_results(filename=f"results/mse_{cfg.size}.json", dataset=f"{cfg.name}{ext}", model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}{rev}", score=total_loss)
 
         wandb_logger.experiment.summary[f"test_mse"] = total_loss
         wandb.finish()

@@ -2,20 +2,15 @@ import sys
 sys.path.append("../../")
 
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
-import numpy as np
 import lightning as L
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
-from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-from dataset import SignalDataset, signal_type_to_label
+from dataset import SignalDataset
 from models.classifier import JePatchTST
 from utils import save_results
 
@@ -75,19 +70,6 @@ def main(cfg: DictConfig):
         correct = sum(p == t for p, t in zip(all_preds, all_targets))
         accuracy = correct / len(all_targets)
         print(f"Accuracy: {accuracy * 100:.2f}%")
-
-        label_to_signal_type = {v: k for k, v in signal_type_to_label.items()}
-        class_names = [label_to_signal_type[i] for i in range(len(label_to_signal_type))]
-
-        cm = confusion_matrix(all_targets, all_preds)
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=class_names, yticklabels=class_names)
-        plt.xlabel("Predicted")
-        plt.ylabel("True")
-        plt.yticks(rotation=0)
-        plt.title("Confusion Matrix ; Accuracy: {:.2f}%".format(accuracy * 100))
-        plt.savefig(f"results/{cfg.size}/confusion_matrix_{cfg.freeze_encoder}_{cfg.scratch}.png")
-        plt.close()
 
         save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=accuracy)
 
