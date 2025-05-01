@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from dataset import SignalDataset
 from models.classifier import JePatchTST
+from classification.resnet import ResNetLit
 from utils import save_results
 
 @hydra.main(version_base=None, config_path=f"../../conf", config_name="config")
@@ -28,14 +29,18 @@ def main(cfg: DictConfig):
     cfg.pretraining = None
     cfg = OmegaConf.merge(cfg.classification, cfg.encoder)
 
-    for scratch, freeze_encoder in [(True, True), (False, True), (False, False)]:
-        cfg.scratch = scratch
-        cfg.freeze_encoder = freeze_encoder
-        
+    for scratch, freeze_encoder in [ ('ResNet', None)]: # (True, True), (False, True), (False, False),
 
+        if scratch != "ResNet":
+            cfg.scratch = scratch
+            cfg.freeze_encoder = freeze_encoder
+            project_name = f"Classification_{cfg.name}_{cfg.freeze_encoder}_{cfg.scratch}"
+        else:
+            project_name = f"Classification_ResNet"
+        
         torch.manual_seed(0)
 
-        wandb_logger = WandbLogger(project='ts-JEPA', name=f"Classification_{cfg.name}_{cfg.freeze_encoder}_{cfg.scratch}")
+        wandb_logger = WandbLogger(project='ts-JEPA', name=project_name)
         
         trainset = SignalDataset(mode='train', size=cfg.ws)
         testset = SignalDataset(mode='test', size=cfg.ws)
@@ -43,7 +48,10 @@ def main(cfg: DictConfig):
         trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=21)
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
 
-        model = JePatchTST(config=cfg)
+        if scratch != "ResNet":
+            model = JePatchTST(config=cfg)
+        else:
+            model = ResNetLit(config=cfg)
 
         wandb_logger.config = cfg
 
@@ -71,7 +79,11 @@ def main(cfg: DictConfig):
         accuracy = correct / len(all_targets)
         print(f"Accuracy: {accuracy * 100:.2f}%")
 
-        save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}", score=accuracy)
+        if scratch != "ResNet":
+            model_name = f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}"
+        else:
+            model_name = "ResNet"
+        save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=model_name, score=accuracy)
 
         wandb_logger.experiment.summary[f"test_accuracy"] = accuracy
         wandb.finish()
