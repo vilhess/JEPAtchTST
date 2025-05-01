@@ -64,6 +64,8 @@ class TimeResNet(nn.Module):
 
     def forward(self, input):
 
+        input = input.permute(0, 2, 1)
+
         x = self.conv_x1(input)
         x = self.conv_y1(x)
         x = self.conv_z1(x)

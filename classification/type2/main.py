@@ -29,7 +29,7 @@ def main(cfg: DictConfig):
     cfg.pretraining = None
     cfg = OmegaConf.merge(cfg.classification, cfg.encoder)
 
-    for scratch, freeze_encoder in [ ('ResNet', None)]: # (True, True), (False, True), (False, False),
+    for scratch, freeze_encoder in [(True, True), (False, True), (False, False), ('ResNet', None)]: # 
 
         if scratch != "ResNet":
             cfg.scratch = scratch
