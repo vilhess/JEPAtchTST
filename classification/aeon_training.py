@@ -14,6 +14,7 @@ def training_module(name, trainset):
         values.extend(val.permute(0, 2, 1).tolist())
         labels.extend(lab.tolist())
     values = np.asarray(values)
+    labels = np.asarray(labels)
     model.fit(values, labels)
 
     return model
