@@ -13,6 +13,7 @@ from tqdm import tqdm
 from dataset import load_concat_datasets
 from models.classifier import JePatchTST
 from classification.resnet import ResNetLit
+from aeon_training import training_module, test_module
 from utils import save_results
 
 @hydra.main(version_base=None, config_path=f"../../conf", config_name="config")
@@ -29,14 +30,15 @@ def main(cfg: DictConfig):
     cfg.pretraining = None
     cfg = OmegaConf.merge(cfg.classification, cfg.encoder)
 
-    for scratch, freeze_encoder in [(True, True), (False, True), (False, False), ('ResNet', None)]: # 
+    for scratch, freeze_encoder in [(True, True), (False, True), (False, False), ('ResNet', None), ('KNN_DTW', None)]: #  
 
-        if scratch != "ResNet":
+        if type(scratch) is bool:
             cfg.scratch = scratch
             cfg.freeze_encoder = freeze_encoder
             project_name = f"Classification_{cfg.name}_{cfg.freeze_encoder}_{cfg.scratch}"
+
         else:
-            project_name = f"Classification_ResNet"
+            project_name = f"Classification_{scratch}"
         
         torch.manual_seed(0)
 
@@ -50,41 +52,48 @@ def main(cfg: DictConfig):
         cfg.n_classes=len(signal_type_to_label)
         cfg.epochs=10
 
-        if scratch != "ResNet":
+        if type(scratch) is bool:
             model = JePatchTST(config=cfg)
-        else:
+        elif scratch=="ResNet":
             model = ResNetLit(config=cfg)
+        elif model_name=="KNN_DTW":
+            model = "KNN_DTW"
 
         wandb_logger.config = cfg
 
-        trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
-                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
-        trainer.fit(model=model, train_dataloaders=trainloader)
+        if model_name=="KNN_DTW":
+            model = training_module(model, trainloader)
+            all_preds, all_targets = test_module(model, testloader)
 
-        model = model.model.to(DEVICE)
-        model.eval()
+        else:
+            trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
+                                accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
+            trainer.fit(model=model, train_dataloaders=trainloader)
 
-        all_preds = []
-        all_targets = []
+            model = model.model.to(DEVICE)
+            model.eval()
 
-        for batch in tqdm(testloader):
-            x, y = batch
-            x = x.to(DEVICE)
-            with torch.no_grad():
-                logits = model(x)
-            preds = torch.argmax(logits, dim=1).detach().cpu()
-            all_preds.extend(preds.tolist())
-            all_targets.extend(y.tolist())
+            all_preds = []
+            all_targets = []
+
+            for batch in tqdm(testloader):
+                x, y = batch
+                x = x.to(DEVICE)
+                with torch.no_grad():
+                    logits = model(x)
+                preds = torch.argmax(logits, dim=1).detach().cpu()
+                all_preds.extend(preds.tolist())
+                all_targets.extend(y.tolist())
 
         # Compute accuracy
         correct = sum(p == t for p, t in zip(all_preds, all_targets))
         accuracy = correct / len(all_targets)
         print(f"Accuracy: {accuracy * 100:.2f}%")
 
-        if scratch != "ResNet":
+        if type(scratch) is bool:
             model_name = f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}"
         else:
-            model_name = "ResNet"
+            model_name = scratch
         save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=model_name, score=accuracy)
 
         wandb_logger.experiment.summary[f"test_accuracy"] = accuracy
