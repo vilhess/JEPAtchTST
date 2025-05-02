@@ -30,7 +30,7 @@ def main(cfg: DictConfig):
     cfg.pretraining = None
     cfg = OmegaConf.merge(cfg.classification, cfg.encoder)
 
-    for scratch, freeze_encoder in [(True, True), (False, True), (False, False), ('ResNet', None), ('KNN_DTW', None)]: # 
+    for scratch, freeze_encoder in [('KNN_DTW', None)]: # (True, True), (False, True), (False, False), ('ResNet', None), 
 
         if type(scratch) is bool:
             cfg.scratch = scratch
@@ -54,12 +54,12 @@ def main(cfg: DictConfig):
             model = JePatchTST(config=cfg)
         elif scratch=="ResNet":
             model = ResNetLit(config=cfg)
-        elif model_name=="KNN_DTW":
+        elif scratch=="KNN_DTW":
             model = "KNN_DTW"
 
         wandb_logger.config = cfg
 
-        if model_name=="KNN_DTW":
+        if scratch=="KNN_DTW":
             model = training_module(model, trainloader)
             all_preds, all_targets = test_module(model, testloader)
         
