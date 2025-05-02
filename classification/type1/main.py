@@ -11,7 +11,7 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from dataset import SignalDataset
-from models.classifier import JePatchTST
+from models.classifier2 import JePatchTST
 from classification.resnet import ResNetLit
 from aeon_training import training_module, test_module
 from utils import save_results
@@ -30,7 +30,7 @@ def main(cfg: DictConfig):
     cfg.pretraining = None
     cfg = OmegaConf.merge(cfg.classification, cfg.encoder)
 
-    for scratch, freeze_encoder in [('KNN_DTW', None)]: # (True, True), (False, True), (False, False), ('ResNet', None), 
+    for scratch, freeze_encoder in [(True, True), (False, True), (False, False)]: # (True, True), (False, True), (False, False), ('ResNet', None), ('KNN_DTW', None)
 
         if type(scratch) is bool:
             cfg.scratch = scratch
@@ -93,7 +93,7 @@ def main(cfg: DictConfig):
             model_name = f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}"
         else:
             model_name = scratch
-        save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=model_name, score=accuracy)
+        save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=model_name+"v2", score=accuracy)
 
         wandb_logger.experiment.summary[f"test_accuracy"] = accuracy
         wandb.finish()
