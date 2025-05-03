@@ -38,6 +38,7 @@ class TSDataset(Dataset):
 
 def load_concat_datasets(seq_len=100, base_path='../../forecasting/data/', univariate=True, target='OT'):
     all_datasets = os.listdir(base_path)
+    all_datasets = [dataset for dataset in all_datasets if dataset.endswith('.csv')]
     train_datasets, test_datasets = [], []
     signal_type_to_label = {}
 
