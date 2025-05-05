@@ -52,25 +52,9 @@ def main(cfg: DictConfig):
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
                             accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
         trainer.fit(model=model, train_dataloaders=trainloader)
+        results = trainer.test(model=model, dataloaders=testloader)
+        accuracy = results[0]["acc"]
 
-        model = model.model.to(DEVICE)
-        model.eval()
-
-        all_preds = []
-        all_targets = []
-
-        for batch in tqdm(testloader):
-            x, y = batch
-            x = x.to(DEVICE)
-            with torch.no_grad():
-                logits = model(x)
-            preds = torch.argmax(logits, dim=1).detach().cpu()
-            all_preds.extend(preds.tolist())
-            all_targets.extend(y.tolist())
-
-        # Compute accuracy
-        correct = sum(p == t for p, t in zip(all_preds, all_targets))
-        accuracy = correct / len(all_targets)
         print(f"Accuracy: {accuracy * 100:.2f}%")
 
         model_name = f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}"

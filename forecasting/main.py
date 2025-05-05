@@ -68,21 +68,8 @@ def main(cfg: DictConfig):
                             accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
         trainer.fit(model=model, train_dataloaders=trainloader)
 
-        model = model.model.to(DEVICE)
-        model.eval()
-        
-        cri  = nn.MSELoss()
-        total_loss = []
-
-        for batch in tqdm(testloader):
-            x, y = batch
-            x = x.to(DEVICE)
-            y = y.to(DEVICE)
-            with torch.no_grad():
-                pred = model(x)
-                loss = cri(pred, y)
-                total_loss.append(loss.item())  
-        total_loss = np.average(total_loss)
+        results = trainer.test(model=model, dataloaders=testloader)
+        total_loss = results[0]["l2Loss"]
         print(f"Test Loss: {total_loss}")
 
         ext=f"_univariate" if cfg.univariate else ""

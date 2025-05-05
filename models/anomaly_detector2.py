@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from models.base_model import PatchTrADencoder
+from models.metric import StreamAUC
     
 class PredictorHead(nn.Module):
     def __init__(self, n_vars, patch_num,  d_model, head_dp=0.):
@@ -82,7 +83,9 @@ class PatchTradLit(L.LightningModule):
         super().__init__()
         self.model = PatchTrAD(config)
         self.lr = config.lr
-    
+
+        self.auc = StreamAUC()
+
     def training_step(self, batch, batch_idx):
         x, _ = batch
         loss = self.model.get_loss(x, mode="train")
@@ -96,3 +99,15 @@ class PatchTradLit(L.LightningModule):
     
     def get_loss(self, x, mode=None):
         return self.model.get_loss(x, mode=mode)
+    
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        errors = self.get_loss(x, mode="test")
+
+        self.auc.update(errors, y)
+    
+    def on_test_epoch_end(self):
+     
+        auc = self.auc.compute()
+        self.log("auc", auc, prog_bar=True)
+        self.auc.reset()

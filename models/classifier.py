@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from models.base_model import PatchTrADencoder
+from models.metric import StreamAccuracy
     
 class ClassifierHead(nn.Module):
     def __init__(self, n_vars, patch_num,  d_model, n_classes, head_dp=0.):
@@ -68,6 +69,8 @@ class JePatchTST(L.LightningModule):
         self.model = PatchTrAD(config)
         self.lr = config.lr
         self.criterion = nn.CrossEntropyLoss()
+
+        self.acc = StreamAccuracy()
     
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -79,3 +82,15 @@ class JePatchTST(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
         return optimizer
+    
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        logits = self.model(x)
+        preds = torch.argmax(logits, dim=1).detach().cpu()
+        self.acc.update(preds, y)
+    
+    def on_test_epoch_end(self):
+    
+        acc = self.acc.compute()
+        self.log("acc", acc, prog_bar=True)
+        self.acc.reset()

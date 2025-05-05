@@ -52,26 +52,9 @@ def main(cfg: DictConfig):
 
         trainer.fit(model=LitModel, train_dataloaders=trainloader)
         
-        test_errors = []
-        test_labels = []
-        
-        LitModel = LitModel.to(DEVICE)
-        LitModel.eval()
+        results = trainer.test(model=LitModel, dataloaders=testloader)
+        auc = results[0]["auc"]
 
-        with torch.no_grad():
-            pbar = tqdm(testloader, desc="Detection Phase")
-            for x, anomaly in pbar:
-                x = x.to(DEVICE)
-                errors = LitModel.get_loss(x, mode="test")
-
-                test_labels.append(anomaly)
-                test_errors.append(errors)
-                del x
-
-        test_errors = torch.cat(test_errors).detach().cpu()
-        test_labels = torch.cat(test_labels).detach().cpu()
-
-        auc = roc_auc_score(test_labels, test_errors)
         print(f"AUC: {auc}")
 
         aucs.append(auc)
@@ -80,7 +63,7 @@ def main(cfg: DictConfig):
         ### Free memory after each subset
         LitModel.to("cpu")
         del LitModel
-        del test_errors, test_labels, trainloader, testloader
+        del trainloader, testloader
         torch.cuda.empty_cache()
         torch.cuda.synchronize()
         del trainer
