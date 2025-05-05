@@ -69,7 +69,7 @@ def main(cfg: DictConfig):
         trainer.fit(model=model, train_dataloaders=trainloader)
 
         results = trainer.test(model=model, dataloaders=testloader)
-        total_loss = results[0]["l2Loss"]
+        total_loss = results[0]["l2loss"]
         print(f"Test Loss: {total_loss}")
 
         ext=f"_univariate" if cfg.univariate else ""
