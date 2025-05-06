@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from torch.utils.data import Dataset, DataLoader
+from scipy.interpolate import interp1d
 
 from models.base_model import PatchTrADencoder
 
@@ -38,22 +39,33 @@ def load_ecg_data(train_path: str, test_path: str):
     return concat[:, 1:], concat[:, 0]
 
 def preprocess_data(data: np.ndarray):
+
     scaler = StandardScaler()
     scaled = scaler.fit_transform(data)
+
+    original_length = data.shape[1]
+    target_length = 100
+    interoplate_func = interp1d(
+        np.linspace(0, 1, original_length),
+        scaled,
+        axis=1
+    )
+    x_new = np.linspace(0, 1, target_length)
+    scaled = interoplate_func(x_new)
+
     return torch.tensor(scaled, dtype=torch.float32)
 
 class ECGDataset(Dataset):
-    def __init__(self, data, labels, window_size=100):
+    def __init__(self, data, labels):
         self.data = data
         self.labels = labels
-        self.window_size = window_size
 
     def __len__(self):
-        return len(self.data) - self.window_size
+        return len(self.data)
 
     def __getitem__(self, idx):
-        x = self.data[idx:idx + self.window_size, :]
-        y = self.labels[idx + self.window_size]
+        x = self.data[idx, :].unsqueeze(-1)
+        y = self.labels[idx]
         return x, y
 
 # ---------------------
@@ -78,13 +90,10 @@ def extract_embeddings(model, dataloader, device):
 # Dimensionality Reduction & Plotting
 # ---------------------
 def reduce_and_plot(embeddings, labels, output_path="ecg_embeddings.png"):
-    # PCA before t-SNE for speed
-    pca = PCA(n_components=50)
-    reduced = pca.fit_transform(embeddings)
 
     # t-SNE
-    tsne = TSNE(n_components=2, perplexity=30, init='pca', learning_rate='auto')
-    embeddings_2d = tsne.fit_transform(reduced)
+    tsne = TSNE(n_components=2)
+    embeddings_2d = tsne.fit_transform(embeddings)
 
     # Plot
     plt.figure(figsize=(8, 6))
