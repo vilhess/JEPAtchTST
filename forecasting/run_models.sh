@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define datasets to iterate over
-sizes=(  "base" "big" ) # "small"
+sizes=("small" "base" "big") # 
 datasets=("etth1" "etth2" "ettm1" "ettm2" "exchange_rate" "weather" "national_illness" ) # electricity 
 
 # Loop through each size and dataset
@@ -15,7 +15,3 @@ for SIZE in "${sizes[@]}"; do
         python main.py forecasting=$DATASET encoder=config_encoder_$SIZE forecasting.univariate=True forecasting.revin=True
     done
 done
-cd ..
-git add .
-git commit -m "Run models on all datasets"
-git push
