@@ -44,7 +44,7 @@ def main(cfg: DictConfig):
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=8, persistent_workers=True)
 
         cfg.n_classes=len(signal_type_to_label)
-        cfg.epochs=10
+        cfg.epochs=100
 
         model = JePatchTST(config=cfg)
 
