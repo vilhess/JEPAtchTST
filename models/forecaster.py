@@ -3,6 +3,7 @@ import torch.nn as nn
 import lightning as L
 from torchmetrics.regression import MeanSquaredError
 from models.base_model import PatchTrADencoder
+from models.metric import StreamL2Loss
 
 class RevIN(nn.Module):
     def __init__(self, num_features: int, eps=1e-5, affine=True):
@@ -134,8 +135,14 @@ class JePatchTST(L.LightningModule):
         super().__init__()
         self.model = PatchTrAD(config)
         self.lr = config.lr
+<<<<<<< HEAD
         self.criterion = nn.MSELoss() 
         self.test_mse = MeanSquaredError()
+=======
+        self.criterion = nn.MSELoss()
+
+        self.l2loss = StreamL2Loss()
+>>>>>>> 106d1c8f30a37b8800b23206547b33819c5ff477
     
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -151,9 +158,19 @@ class JePatchTST(L.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y = batch
         pred = self.model(x)
+<<<<<<< HEAD
         self.test_mse.update(pred, y)
     
     def on_test_epoch_end(self):
         test_mse = self.test_mse.compute()
         self.test_mse.reset()
         self.log("mse", test_mse, prog_bar=True)    
+=======
+        self.l2loss.update(pred, y)
+    
+    def on_test_epoch_end(self):
+    
+        l2loss = self.l2loss.compute()
+        self.log("l2loss", l2loss, prog_bar=True)
+        self.l2loss.reset()
+>>>>>>> 106d1c8f30a37b8800b23206547b33819c5ff477

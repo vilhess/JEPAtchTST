@@ -44,7 +44,7 @@ def main(cfg: DictConfig):
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=8, persistent_workers=True)
 
         cfg.n_classes=len(signal_type_to_label)
-        cfg.epochs=10
+        cfg.epochs=100
 
         model = JePatchTST(config=cfg)
 
@@ -54,24 +54,8 @@ def main(cfg: DictConfig):
                             accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
         trainer.fit(model=model, train_dataloaders=trainloader)
 
-        model = model.model.to(DEVICE)
-        model.eval()
-
-        all_preds = []
-        all_targets = []
-
-        for batch in tqdm(testloader):
-            x, y = batch
-            x = x.to(DEVICE)
-            with torch.no_grad():
-                logits = model(x)
-            preds = torch.argmax(logits, dim=1).detach().cpu()
-            all_preds.extend(preds.tolist())
-            all_targets.extend(y.tolist())
-
-        # Compute accuracy
-        correct = sum(p == t for p, t in zip(all_preds, all_targets))
-        accuracy = correct / len(all_targets)
+        results = trainer.test(model=model, dataloaders=testloader)
+        accuracy = results[0]["acc"]
         print(f"Accuracy: {accuracy * 100:.2f}%")
 
         model_name = f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}"
