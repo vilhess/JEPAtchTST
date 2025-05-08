@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from models.base_model import PatchTrADencoder
+from torchmetrics.classification import MulticlassAccuracy
     
 class ClassifierHead(nn.Module):
     def __init__(self, n_vars, patch_num,  d_model, n_classes, head_dp=0.):
@@ -68,6 +69,7 @@ class JePatchTST(L.LightningModule):
         self.model = PatchTrAD(config)
         self.lr = config.lr
         self.criterion = nn.CrossEntropyLoss()
+        self.accuracy = MulticlassAccuracy(num_classes=config.n_classes, average='macro')
     
     def training_step(self, batch, batch_idx):
         x, y = batch

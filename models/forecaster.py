@@ -1,6 +1,7 @@
 import torch 
 import torch.nn as nn
 import lightning as L
+from torchmetrics.regression import MeanSquaredError
 from models.base_model import PatchTrADencoder
 
 class RevIN(nn.Module):
@@ -133,7 +134,8 @@ class JePatchTST(L.LightningModule):
         super().__init__()
         self.model = PatchTrAD(config)
         self.lr = config.lr
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.MSELoss() 
+        self.test_mse = MeanSquaredError()
     
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -145,3 +147,13 @@ class JePatchTST(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
         return optimizer
+    
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+        pred = self.model(x)
+        self.test_mse.update(pred, y)
+    
+    def on_test_epoch_end(self):
+        test_mse = self.test_mse.compute()
+        self.test_mse.reset()
+        self.log("mse", test_mse, prog_bar=True)    
