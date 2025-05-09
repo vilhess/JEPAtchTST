@@ -16,7 +16,8 @@ signal_type_to_label = {
 }
 
 train_start_vals = [1, 3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
-test_start_vals = [65, 70, 75, 80, 85]
+val_start_vals = [65, 70, 75, 80, 85]
+test_start_vals = [90, 95, 100, 105, 110]
 
 class SignalDataset(Dataset):
     def __init__(self, mode='train', size=100):
@@ -25,6 +26,8 @@ class SignalDataset(Dataset):
 
         if mode == 'train':
             start_vals = train_start_vals
+        elif mode == 'val':
+            start_vals = val_start_vals
         elif mode == 'test':
             start_vals = test_start_vals
         else:

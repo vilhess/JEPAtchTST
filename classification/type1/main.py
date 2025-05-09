@@ -4,11 +4,11 @@ sys.path.append("../../")
 import torch
 from torch.utils.data import DataLoader
 import lightning as L
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from tqdm import tqdm
 
 from dataset import SignalDataset
 from models.classifier import JePatchTST
@@ -16,8 +16,6 @@ from utils import save_results
 
 @hydra.main(version_base=None, config_path=f"../../conf", config_name="config")
 def main(cfg: DictConfig):
-
-    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     print(f"---------")
     print("Config:")
@@ -29,7 +27,6 @@ def main(cfg: DictConfig):
     cfg = OmegaConf.merge(cfg.classification, cfg.encoder)
 
     for scratch, freeze_encoder in [(True, True), (False, True), (False, False)]: 
-
         
         cfg.scratch = scratch
         cfg.freeze_encoder = freeze_encoder
@@ -40,9 +37,11 @@ def main(cfg: DictConfig):
         wandb_logger = WandbLogger(project='ts-JEPA', name=project_name)
         
         trainset = SignalDataset(mode='train', size=cfg.ws)
+        valset = SignalDataset(mode='val', size=cfg.ws)
         testset = SignalDataset(mode='test', size=cfg.ws)
 
         trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=8)
+        valloader = DataLoader(valset, batch_size=cfg.batch_size, shuffle=False, num_workers=8)
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=8)
 
         model = JePatchTST(config=cfg)
@@ -50,8 +49,8 @@ def main(cfg: DictConfig):
         wandb_logger.config = cfg
 
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
-                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
-        trainer.fit(model=model, train_dataloaders=trainloader)
+                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[EarlyStopping(monitor="val_loss", mode="min", patience=10)])
+        trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
         results = trainer.test(model=model, dataloaders=testloader)
         accuracy = results[0]["acc"]
 

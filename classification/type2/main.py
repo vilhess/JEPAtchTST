@@ -8,7 +8,6 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from tqdm import tqdm
 
 from dataset import load_concat_datasets
 from models.classifier import JePatchTST
@@ -16,8 +15,6 @@ from utils import save_results
 
 @hydra.main(version_base=None, config_path=f"../../conf", config_name="config")
 def main(cfg: DictConfig):
-
-    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
     print(f"---------")
     print("Config:")
