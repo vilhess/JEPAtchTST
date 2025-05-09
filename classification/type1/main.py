@@ -49,7 +49,7 @@ def main(cfg: DictConfig):
         wandb_logger.config = cfg
 
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
-                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[EarlyStopping(monitor="val_acc", mode="max", patience=10)])
+                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[EarlyStopping(monitor="val_acc", mode="max", patience=50)])
         trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
         results = trainer.test(model=model, dataloaders=testloader)
         accuracy = results[0]["acc"]
