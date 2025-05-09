@@ -147,22 +147,24 @@ class JePatchTST(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        prediction = self.model(x)
-        loss = self.criterion(prediction, y)
-        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
-        return loss
-    
-    def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        return optimizer
-    
+        pred = self.model(x)
+        self.l2loss.update(pred, y)
+
+    def on_validation_epoch_end(self):
+        l2loss = self.l2loss.compute()
+        self.log("val_l2loss", l2loss, prog_bar=True)
+        self.l2loss.reset()
+
     def test_step(self, batch, batch_idx):
         x, y = batch
         pred = self.model(x)
         self.l2loss.update(pred, y)
     
     def on_test_epoch_end(self):
-    
         l2loss = self.l2loss.compute()
         self.log("l2loss", l2loss, prog_bar=True)
         self.l2loss.reset()
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+        return optimizer

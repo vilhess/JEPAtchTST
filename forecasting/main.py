@@ -4,6 +4,7 @@ sys.path.append("..")
 import torch
 from torch.utils.data import DataLoader
 import lightning as L
+from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 import hydra
@@ -60,7 +61,7 @@ def main(cfg: DictConfig):
         wandb_logger.config = cfg
 
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
-                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False)
+                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[EarlyStopping(monitor="val_l2loss", mode="min", patience=10)])
         trainer.fit(model=model, train_dataloaders=trainloader)
 
         results = trainer.test(model=model, dataloaders=testloader)
