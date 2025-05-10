@@ -41,7 +41,15 @@ def main(cfg: DictConfig):
             path=cfg.path,
             seq_len=cfg.ws,
             target_len=cfg.target_len,
-            train=True,
+            mode="train",
+            univariate=cfg.univariate,
+            target="OT"
+        )
+        valset = TSDataset(
+            path=cfg.path,
+            seq_len=cfg.ws,
+            target_len=cfg.target_len,
+            mode="val",
             univariate=cfg.univariate,
             target="OT"
         )
@@ -49,11 +57,12 @@ def main(cfg: DictConfig):
             path=cfg.path,
             seq_len=cfg.ws,
             target_len=cfg.target_len,
-            train=False,    
+            mode="test",   
             univariate=cfg.univariate,
             target="OT"
         )
         trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=21)
+        valloader = DataLoader(valset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
 
         model = JePatchTST(config=cfg)
@@ -62,7 +71,7 @@ def main(cfg: DictConfig):
 
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
                             accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[EarlyStopping(monitor="val_l2loss", mode="min", patience=10)])
-        trainer.fit(model=model, train_dataloaders=trainloader)
+        trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
 
         results = trainer.test(model=model, dataloaders=testloader)
         total_loss = results[0]["mse"]
