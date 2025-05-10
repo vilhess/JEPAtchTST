@@ -74,7 +74,7 @@ def main(cfg: DictConfig):
         trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
 
         results = trainer.test(model=model, dataloaders=testloader)
-        total_loss = results[0]["mse"]
+        total_loss = results[0]["l2loss"]
 
         ext=f"_univariate" if cfg.univariate else ""
         rev = "_revin" if cfg.revin else ""
