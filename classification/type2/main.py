@@ -37,19 +37,20 @@ def main(cfg: DictConfig):
 
         wandb_logger = WandbLogger(project='ts-JEPA', name=project_name)
         
-        trainset, testset, signal_type_to_label = load_concat_datasets(seq_len=cfg.ws)
+        trainset, valset, testset, signal_type_to_label = load_concat_datasets(seq_len=cfg.ws)
 
-        trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=8, persistent_workers=True)
-        testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=8, persistent_workers=True)
+        trainloader = DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=21)
+        valloader = DataLoader(valset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
+        testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
 
         cfg.n_classes=len(signal_type_to_label)
-        cfg.epochs=100
+        cfg.epochs=15
 
         model = JePatchTST(config=cfg)
 
         wandb_logger.config = cfg
 
-        early_stop_callback = EarlyStopping(monitor="val_acc", mode="max", patience=10)
+        early_stop_callback = EarlyStopping(monitor="val_acc", mode="max", patience=3)
         checkpoint_callback = ModelCheckpoint(
             monitor="val_acc",
             mode="max",
@@ -60,7 +61,7 @@ def main(cfg: DictConfig):
 
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=True, log_every_n_steps=1, 
                             accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[early_stop_callback, checkpoint_callback])
-        trainer.fit(model=model, train_dataloaders=trainloader)
+        trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
 
         best_model_path = checkpoint_callback.best_model_path
         best_model = JePatchTST.load_from_checkpoint(best_model_path, config=cfg)
