@@ -4,6 +4,7 @@ sys.path.append("../../")
 import torch
 from torch.utils.data import DataLoader
 import lightning as L
+from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.callbacks.early_stopping import EarlyStopping
 import wandb
 from pytorch_lightning.loggers import WandbLogger
@@ -48,11 +49,22 @@ def main(cfg: DictConfig):
 
         wandb_logger.config = cfg
 
-        trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, 
-                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[EarlyStopping(monitor="val_acc", mode="max", patience=10)])
+        early_stop_callback = EarlyStopping(monitor="val_acc", mode="max", patience=10)
+        checkpoint_callback = ModelCheckpoint(
+            monitor="val_acc",
+            mode="max",
+            save_top_k=1,
+            save_last=False,
+            filename="best-checkpoint"
+        )
+
+        trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=True, log_every_n_steps=1, 
+                            accelerator="gpu", devices=1, strategy="auto", fast_dev_run=False, callbacks=[early_stop_callback, checkpoint_callback])
         trainer.fit(model=model, train_dataloaders=trainloader)
 
-        results = trainer.test(model=model, dataloaders=testloader)
+        best_model_path = checkpoint_callback.best_model_path
+        best_model = JePatchTST.load_from_checkpoint(best_model_path, config=cfg)
+        results = trainer.test(model=best_model, dataloaders=testloader)
         accuracy = results[0]["acc"]
         print(f"Accuracy: {accuracy * 100:.2f}%")
 
