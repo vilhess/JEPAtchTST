@@ -5,7 +5,7 @@ in_dim: 7
 target_len: 96
 univariate: False
 
-epochs: 20
+epochs: 30
 lr: 1e-4
 batch_size: 256
 

@@ -2,7 +2,6 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
-from gluonts.dataset.pandas import PandasDataset
 
 class TSDataset(Dataset):
     def __init__(self, path, seq_len=100, target_len=100, mode="train", univariate=False, target='OT'):
