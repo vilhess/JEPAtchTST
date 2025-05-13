@@ -44,13 +44,13 @@ def main(cfg: DictConfig):
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
 
         cfg.n_classes=len(signal_type_to_label)
-        cfg.epochs=15
+        cfg.epochs=30
 
         model = JePatchTST(config=cfg)
 
         wandb_logger.config = cfg
 
-        early_stop_callback = EarlyStopping(monitor="val_acc", mode="max", patience=3)
+        early_stop_callback = EarlyStopping(monitor="val_acc", mode="max", patience=5)
         checkpoint_callback = ModelCheckpoint(
             monitor="val_acc",
             mode="max",
