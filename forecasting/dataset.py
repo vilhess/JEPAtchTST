@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from sklearn.preprocessing import StandardScaler
 
 class TSDataset(Dataset):
-    def __init__(self, path, seq_len=100, target_len=100, mode="train", univariate=False, target='OT'):
+    def __init__(self, path, seq_len=100, target_len=100, mode="train", univariate=False, target='OT', prc_train=1):
 
         self.seq_len = seq_len
         self.target_len = target_len
@@ -20,7 +20,9 @@ class TSDataset(Dataset):
         test_size = int(len(self.data) * 0.2)
         val_size = len(self.data) - train_size - test_size
 
-        train = self.data[:train_size].values
+        train_start_index = int(train_size * (1-prc_train))
+
+        train = self.data[train_start_index:train_size].values
 
         scaler = StandardScaler()
         scaler.fit(train)
@@ -28,7 +30,7 @@ class TSDataset(Dataset):
         self.data = scaler.transform(self.data.values)
 
         if self.mode == "train":
-            self.data = self.data[:train_size]
+            self.data = self.data[train_start_index:train_size]
         elif self.mode == "val":
             self.data = self.data[train_size-seq_len:train_size + val_size]
         else:
