@@ -1,6 +1,6 @@
 defaults:
 
-  - encoder: config_encoder_base
+  - encoder: config_encoder
   - pretraining: vicreg
   - anomaly_detection: nyc_taxi
   - forecasting: etth1 
