@@ -8,7 +8,7 @@ from copy import deepcopy
 
 from models.mask import apply_masks
 from models.schedulers import WarmupCosineSchedule, CosineWDSchedule
-from models.vicreg import VICRegLoss2
+from models.vicreg import VICRegLoss
 
 class Patcher(nn.Module):
     def __init__(self, window_size, patch_len):
@@ -374,7 +374,7 @@ class LitJEPA(L.LightningModule):
                                          T_max=int(self.ipe))
         self.wd_scheduler = CosineWDSchedule(self.optimizer, ref_wd=self.wd, T_max=int(self.ipe*self.epochs*self.ipe_scale), final_wd=self.final_wd)
 
-        self.vicreg = VICRegLoss2()
+        self.vicreg = VICRegLoss()
         
         self.coeff_pred, self.coeff_std, self.coeff_cov = config.coeff_pred, config.coeff_std, config.coeff_cov
 
