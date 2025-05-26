@@ -6,9 +6,21 @@ import math
 import lightning as L 
 from copy import deepcopy
 
-from models.mask import apply_masks
 from models.schedulers import WarmupCosineSchedule, CosineWDSchedule
 from models.vicreg import VICRegLoss
+
+def apply_masks(x, masks):
+
+    # Input: 
+
+    # x: bs*in_dim, patch_num, d_model
+
+    # masks: bs, indices (contain indices to keep for each batch)
+    repeat = x.size(0)/masks.size(0)
+    mask_keep = masks.unsqueeze(-1).repeat(1, 1, x.size(-1)).repeat_interleave(int(repeat), 0) # bs, indices, d_mode
+    
+    new_x = torch.gather(x, dim=1, index=mask_keep) # bs*in_dim, indices, d_model
+    return new_x
 
 class Patcher(nn.Module):
     def __init__(self, window_size, patch_len):
