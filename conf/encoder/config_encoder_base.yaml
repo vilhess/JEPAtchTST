@@ -6,7 +6,7 @@ d_ff: 256
 n_heads: 8
 n_layers: 2
 
-save_path: ../checkpoints/ts_jepa_vicreg_base
+save_path: ../checkpoint/ts_jepa_vicreg_base
 load_epoch: 1
 dataset: 1G
 
