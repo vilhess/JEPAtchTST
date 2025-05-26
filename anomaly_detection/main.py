@@ -6,10 +6,8 @@ import numpy as np
 import lightning as L
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-from sklearn.metrics import roc_auc_score
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from tqdm import tqdm
 import gc
 
 from models.anomaly_detector import PatchTradLit
@@ -48,7 +46,6 @@ def main(cfg: DictConfig):
         
         LitModel = PatchTradLit(cfg)
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, precision="bf16-mixed", accelerator="gpu", devices=1, strategy="auto")
-        #trainer = L.Trainer(max_epochs=1, logger=wandb_logger, enable_checkpointing=False, fast_dev_run=True)
 
         trainer.fit(model=LitModel, train_dataloaders=trainloader)
         
@@ -74,7 +71,7 @@ def main(cfg: DictConfig):
         
     final_auc = np.mean(aucs)
     print(f"Final AUC: {final_auc}")
-    save_results(filename=f"results/aucs.json", dataset=dataset, model=f"jepatchtrad_{cfg.size}", score=round(final_auc, 4))
+    save_results(filename=f"results/aucs.json", dataset=dataset, model=f"jepatchtrad", score=round(final_auc, 4))
     wandb_logger.experiment.summary[f"final_auc"] = final_auc
 
     wandb.finish()
