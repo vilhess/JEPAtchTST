@@ -70,7 +70,7 @@ def main(cfg: DictConfig):
         print(f"Accuracy: {accuracy * 100:.2f}%")
 
         model_name = f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}"
-        #save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=model_name, score=accuracy)
+        save_results(filename=f"results/{cfg.size}/accs.json", dataset=cfg.name, model=model_name, score=accuracy)
 
         wandb_logger.experiment.summary[f"test_accuracy"] = accuracy
         wandb.finish()
