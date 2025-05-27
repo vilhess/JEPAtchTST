@@ -12,7 +12,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from dataset import SignalDataset
-from models.classifier import JePatchTST
+from models.classifier import JEPAtchTSTLit
 from utils import save_results
 
 @hydra.main(version_base=None, config_path=f"../../conf", config_name="config")
@@ -45,7 +45,7 @@ def main(cfg: DictConfig):
         valloader = DataLoader(valset, batch_size=cfg.batch_size, shuffle=False, num_workers=8)
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=8)
 
-        model = JePatchTST(config=cfg)
+        model = JEPAtchTSTLit(config=cfg)
 
         wandb_logger.config = cfg
 
@@ -63,14 +63,14 @@ def main(cfg: DictConfig):
         trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
 
         best_model_path = checkpoint_callback.best_model_path
-        best_model = JePatchTST.load_from_checkpoint(best_model_path, config=cfg)
+        best_model = JEPAtchTSTLit.load_from_checkpoint(best_model_path, config=cfg)
         results = trainer.test(model=best_model, dataloaders=testloader)
         accuracy = results[0]["acc"]
 
         print(f"Accuracy: {accuracy * 100:.2f}%")
 
         model_name = f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}"
-        save_results(filename=f"results/accs.json", dataset=cfg.name, model=model_name, score=accuracy)
+        #save_results(filename=f"results/accs.json", dataset=cfg.name, model=model_name, score=accuracy)
 
         wandb_logger.experiment.summary[f"test_accuracy"] = accuracy
         wandb.finish()

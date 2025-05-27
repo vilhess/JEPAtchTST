@@ -12,7 +12,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from dataset import TSDataset
-from models.forecaster import JePatchTST
+from models.forecaster import JePatchTSTLit
 from utils import save_results
 
 @hydra.main(version_base=None, config_path=f"../conf", config_name="config")
@@ -66,7 +66,7 @@ def main(cfg: DictConfig):
         valloader = DataLoader(valset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
         testloader = DataLoader(testset, batch_size=cfg.batch_size, shuffle=False, num_workers=21)
 
-        model = JePatchTST(config=cfg)
+        model = JePatchTSTLit(config=cfg)
 
         wandb_logger.config = cfg
 
@@ -84,13 +84,13 @@ def main(cfg: DictConfig):
         trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
 
         best_model_path = checkpoint_callback.best_model_path
-        best_model = JePatchTST.load_from_checkpoint(best_model_path, config=cfg)
+        best_model = JePatchTSTLit.load_from_checkpoint(best_model_path, config=cfg)
         results = trainer.test(model=best_model, dataloaders=testloader)
         total_loss = results[0]["l2loss"]
 
         ext=f"_univariate" if cfg.univariate else ""
         rev = "_revin" if cfg.revin else ""
-        save_results(filename=f"results/mse.json", dataset=f"{cfg.name}{ext}", model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}{rev}", score=total_loss)
+        #save_results(filename=f"results/mse.json", dataset=f"{cfg.name}{ext}", model=f"JePatchTST_{cfg.freeze_encoder}_{cfg.scratch}{rev}", score=total_loss)
 
         wandb_logger.experiment.summary[f"test_mse"] = total_loss
         wandb.finish()

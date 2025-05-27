@@ -12,7 +12,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from dataset import TSDataset
-from models.forecaster import JePatchTST
+from models.forecaster import JePatchTSTLit
 from utils import save_results
 
 @hydra.main(version_base=None, config_path=f"../conf", config_name="config")
@@ -74,7 +74,7 @@ def main(cfg: DictConfig):
             print(f"Valset size: {len(valset)}")
             print(f"Testset size: {len(testset)}")
 
-            model = JePatchTST(config=cfg)
+            model = JePatchTSTLit(config=cfg)
 
             wandb_logger.config = cfg
 
@@ -92,7 +92,7 @@ def main(cfg: DictConfig):
             trainer.fit(model=model, train_dataloaders=trainloader, val_dataloaders=valloader)
 
             best_model_path = checkpoint_callback.best_model_path
-            best_model = JePatchTST.load_from_checkpoint(best_model_path, config=cfg)
+            best_model = JePatchTSTLit.load_from_checkpoint(best_model_path, config=cfg)
             results = trainer.test(model=best_model, dataloaders=testloader)
             total_loss = results[0]["l2loss"]
 

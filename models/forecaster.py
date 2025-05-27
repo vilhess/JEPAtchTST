@@ -1,7 +1,7 @@
 import torch 
 import torch.nn as nn
 import lightning as L
-from models.base_model import PatchTrADencoder
+from models.base_model import JEPAtchTSTEncoder
 from models.metric import StreamL2Loss
 
 class RevIN(nn.Module):
@@ -90,30 +90,37 @@ class PredictorHead(nn.Module):
         outs = torch.stack(outs, dim=1)
         return outs
     
-class PatchTrAD(nn.Module):
+class JEPAtchTST(nn.Module):
     def __init__(self, config):
         super().__init__()
-        num_patches = config.ws // config.patch_len
+        num_patches = config["ws"] // config["patch_len"]
 
-        if config.revin:
-            self.revin = RevIN(num_features=config.in_dim, eps=1e-5, affine=True)
+        if config["revin"]:
+            self.revin = RevIN(num_features=config["in_dim"], eps=1e-5, affine=True)
         else:
             self.revin = None
 
-        self.encoder = PatchTrADencoder(config)
-
-        if not config.scratch:
-            checkpoint_path = config.save_path + "_" + str(config.load_epoch) + ".ckpt"
-            checkpoint = torch.load(checkpoint_path, weights_only=True)
-            self.encoder.load_state_dict(checkpoint)
-            self.encoder.requires_grad_(False if config.freeze_encoder else True)
+        if not config["scratch"]:
+            if config["load_hub"]:
+                print("Loading pretrained JEPAtchTST from Hugging Face Hub")
+                self.encoder = JEPAtchTSTEncoder.from_pretrained("vilhess/JEPAtchTST")
+            else:
+                print("Loading JEPAtchTST from local checkpoint")
+                self.encoder = JEPAtchTSTEncoder(config)
+                checkpoint_path = config["save_path"]
+                checkpoint = torch.load(checkpoint_path, weights_only=True)
+                self.encoder.load_state_dict(checkpoint)
+            self.encoder.requires_grad_(False if config['freeze_encoder'] else True)
+        
+        else:
+            self.encoder = JEPAtchTSTEncoder(config)
 
         self.head = PredictorHead(
-            n_vars=config.in_dim,
+            n_vars=config["in_dim"],
             patch_num=num_patches,
-            d_model=config.d_model,
-            target_len=config.target_len,
-            head_dp=config.head_dp
+            d_model=config["d_model"],
+            target_len=config["target_len"],
+            head_dp=config["head_dp"]
         )
         self.head.requires_grad_(True)
 
@@ -129,10 +136,10 @@ class PatchTrAD(nn.Module):
             prediction = self.revin(prediction, mode='denorm')
         return prediction
     
-class JePatchTST(L.LightningModule):
+class JePatchTSTLit(L.LightningModule):
     def __init__(self, config):
         super().__init__()
-        self.model = PatchTrAD(config)
+        self.model = JEPAtchTST(config)
         self.lr = config.lr
         self.criterion = nn.MSELoss()
 

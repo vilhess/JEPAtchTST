@@ -1,7 +1,7 @@
 import torch 
 import torch.nn as nn
 import lightning as L
-from models.base_model import PatchTrADencoder
+from models.base_model import JEPAtchTSTEncoder
 from models.metric import StreamAUC
     
 class Head(nn.Module):
@@ -37,18 +37,24 @@ class Head(nn.Module):
         outs = torch.stack(outs, dim=1)
         return outs
     
-class PatchTrAD(nn.Module):
+class JEPAtchTrAD(nn.Module):
     def __init__(self, config):
         super().__init__()
-        num_patches = config.ws // config.patch_len
+        num_patches = config["ws"] // config["patch_len"]
 
-        self.encoder = PatchTrADencoder(config)
-        checkpoint_path = config.save_path + "_" + str(config.load_epoch) + ".ckpt"
-        checkpoint = torch.load(checkpoint_path, weights_only=True)
-        self.encoder.load_state_dict(checkpoint)
-        self.encoder.requires_grad_(False if config.freeze_encoder else True)
+        if config["load_hub"]:
+            print("Loading pretrained JEPAtchTST from Hugging Face Hub")
+            self.encoder = JEPAtchTSTEncoder.from_pretrained("vilhess/JEPAtchTST")
+        else:
+            print("Loading JEPAtchTST from local checkpoint")
+            self.encoder = JEPAtchTSTEncoder(config)
+            checkpoint_path = config["save_path"]
+            checkpoint = torch.load(checkpoint_path, weights_only=True)
+            self.encoder.load_state_dict(checkpoint)
 
-        self.head = Head(config.in_dim, config.patch_len, num_patches, config.d_model, config.head_dp if config.head_dp else 0)
+        self.encoder.requires_grad_(False if config["freeze_encoder"] else True)
+
+        self.head = Head(config["in_dim"], config["patch_len"], num_patches, config["d_model"], config["head_dp"] if config["head_dp"] else 0)
         self.head.requires_grad_(True)
 
     def forward(self, x):
@@ -71,11 +77,11 @@ class PatchTrAD(nn.Module):
 
         return error
     
-class PatchTradLit(L.LightningModule):
+class JEPAtchTrADLit(L.LightningModule):
     def __init__(self, config):
         super().__init__()
-        self.model = PatchTrAD(config)
-        self.lr = config.lr
+        self.model = JEPAtchTrAD(config)
+        self.lr = config["lr"]
 
         self.auc = StreamAUC()
     

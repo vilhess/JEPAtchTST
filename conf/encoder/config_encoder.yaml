@@ -1,3 +1,5 @@
+### Do not edit ths part of the file
+
 ws: 100
 patch_len: 5
 
@@ -6,8 +8,9 @@ d_ff: 256
 n_heads: 8
 n_layers: 2
 
-save_path: ../checkpoint/jepatchtst
-load_epoch: 1
-dataset: 1G
+###
 
-size: base
+# You can edit the following parameters : 
+
+save_path: ../checkpoint/jepatchtst.ckpt # load the model from this path
+load_hub: True # load the model from HuggingFace Hub

@@ -10,7 +10,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 import gc
 
-from models.anomaly_detector import PatchTradLit
+from models.anomaly_detector import JEPAtchTrADLit
 from utils import get_loaders, save_results
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -44,7 +44,7 @@ def main(cfg: DictConfig):
         cfg["len_loader"] = len(trainloader) # Useful for some lr scheduler
         wandb_logger.config = cfg
         
-        LitModel = PatchTradLit(cfg)
+        LitModel = JEPAtchTrADLit(cfg)
         trainer = L.Trainer(max_epochs=cfg.epochs, logger=wandb_logger, enable_checkpointing=False, log_every_n_steps=1, precision="bf16-mixed", accelerator="gpu", devices=1, strategy="auto")
 
         trainer.fit(model=LitModel, train_dataloaders=trainloader)
@@ -71,7 +71,7 @@ def main(cfg: DictConfig):
         
     final_auc = np.mean(aucs)
     print(f"Final AUC: {final_auc}")
-    save_results(filename=f"results/aucs.json", dataset=dataset, model=f"jepatchtrad", score=round(final_auc, 4))
+    #save_results(filename=f"results/aucs.json", dataset=dataset, model=f"jepatchtrad", score=round(final_auc, 4))
     wandb_logger.experiment.summary[f"final_auc"] = final_auc
 
     wandb.finish()

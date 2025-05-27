@@ -5,6 +5,7 @@ from einops import rearrange
 import math
 import lightning as L 
 from copy import deepcopy
+from huggingface_hub import PyTorchModelHubMixin
 
 from models.schedulers import WarmupCosineSchedule, CosineWDSchedule
 from models.vicreg import VICRegLoss
@@ -242,16 +243,16 @@ class TSTiEncoder(nn.Module):
         return x  # bs x nvars x num_patches x d_model
     
 
-class PatchTrADencoder(nn.Module):
+class JEPAtchTSTEncoder(nn.Module, PyTorchModelHubMixin):
     def __init__(self, config):
         super().__init__()
 
-        window_size = config.ws
-        patch_len = config.patch_len
-        d_model = config.d_model
-        n_heads = config.n_heads
-        n_layers = config.n_layers
-        d_ff = config.d_ff
+        window_size = config["ws"]
+        patch_len = config["patch_len"]
+        d_model = config["d_model"]
+        n_heads = config["n_heads"]
+        n_layers = config["n_layers"]
+        d_ff = config["d_ff"]
         attn_dp=0.
         dp=0.3
 
@@ -286,14 +287,14 @@ class TSTiPredictor(nn.Module):
     def __init__(self, config):
         super().__init__()
 
-        window_size = config.ws
-        patch_len = config.patch_len
+        window_size = config["ws"]
+        patch_len = config["patch_len"]
         patch_num = window_size//patch_len
-        d_model = config.d_model
-        predictor_dim = config.d_model
-        n_heads = config.n_heads
-        n_layers = config.n_layers
-        d_ff = config.d_ff
+        d_model = config["d_model"]
+        predictor_dim = config["d_model"]
+        n_heads = config["n_heads"]
+        n_layers = config["n_layers"]
+        d_ff = config["d_ff"]
         attn_dp=0.
         dp=0.
 
@@ -350,7 +351,7 @@ class TSTiPredictor(nn.Module):
 class LitJEPA(L.LightningModule):
     def __init__(self, config):
         super().__init__() 
-        self.encoder = PatchTrADencoder(config)
+        self.encoder = JEPAtchTSTEncoder(config)
         self.predictor = TSTiPredictor(config)
         self.init_weights()
 
