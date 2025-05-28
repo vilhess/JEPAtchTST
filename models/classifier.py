@@ -47,7 +47,7 @@ class JEPAtchTST(nn.Module):
             else:
                 print("Loading JEPAtchTST from local checkpoint")
                 self.encoder = JEPAtchTSTEncoder(config)
-                checkpoint_path = config["save_path"]
+                checkpoint_path = "../" + config["save_path"]
                 checkpoint = torch.load(checkpoint_path, weights_only=True)
                 self.encoder.load_state_dict(checkpoint)
             self.encoder.requires_grad_(False if config["freeze_encoder"] else True)
