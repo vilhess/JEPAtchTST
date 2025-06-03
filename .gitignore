@@ -2,5 +2,6 @@
 *outputs/
 *wandb/
 *TS-JEPA/
+*ts-JEPA/
 checkpoints/
 __pycache__/
