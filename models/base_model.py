@@ -437,8 +437,7 @@ class LitJEPA(L.LightningModule):
         return optimizer
     
     def on_train_epoch_end(self):
-        model_path = f"{self.save_path}_{self.current_epoch+1}.ckpt"
-        self.save_encoder(model_path)
+        self.save_encoder(self.save_path)
 
     def save_encoder(self, path):
         torch.save(self.encoder.state_dict(), path)
